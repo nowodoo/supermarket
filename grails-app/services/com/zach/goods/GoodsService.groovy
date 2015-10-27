@@ -29,29 +29,31 @@ class GoodsService {
         def goods = []
 
         def dbInstance = sqlUtilService.getInstance();
+        //只要是商品的number添加了就不再添加管条形码了
         if(number){
             dbInstance.eachRow("select * from Goods where incode = '"+number+"'",{
                 def value = [:]
                 value.goodsName = it.fname  //商品名称
                 value.incode = it.incode
                 value.barcode = it.barcode
-                value.specs = (it.specs==null)?"":it.specs //规格
+                value.specs = (it.specs==null)?"":it.specs  //规格
                 value.unit = it.unit        //单价
-                value.inprc = it.inprc  //进价
-                value.snprc = it.snprc  //售价
-                value.supplier = dbInstance.rows("select * from Ware_sr where incode = '"+it.incode+"'")    //获取这个商品的供应商
+                value.inprc = it.inprc      //进价
+                value.snprc = it.snprc      //售价
+                value.suppliers = dbInstance.rows("select a.incode, a.custno, a.Iprc, b.custname, b.shortname, b.dtype, b.addr, b.tel, b.faxnum from Ware_sr a left join Customer b on a.custno = b.custno where a.incode = '"+it.incode+"'")    //获取这个商品的供应商
                 goods << value
             })
         }else{
             dbInstance.eachRow("select * from Goods where barcode = '"+barcode+"'",{
                 def value = [:]
-                value.goodsName = it.fname  //商品名称
+                value.goodsName = it.fname      //商品名称
                 value.barcode = it.barcode
                 value.specs = (it.specs==null)?"":it.specs  //规格
-                value.unit = it.unit //单价
-                value.inprc = it.inprc   //进价
+                value.unit = it.unit        //单价
+                value.inprc = it.inprc      //进价
                 value.snprc = it.snprc      //售价
-                value.supplier = dbInstance.rows("select * from Ware_sr where incode = '"+it.incode+"'")    //获取这个商品的供应商
+                value.suppliers = dbInstance.rows("select * from Customer where custno in (select custno from Ware_sr where incode = '"+it.incode+"')")    //获取这个商品的供应商
+//                value.suppliers = dbInstance.rows("select * from Customer where custno = '10001'")    //获取这个商品的供应商
                 goods << value
             })
         }
