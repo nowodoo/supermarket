@@ -27,7 +27,7 @@ class ApiController {
         def value = userService.login(username, password);
 
         if(value.size() == 0){
-            statusMsg = "无数据"
+            statusMsg = "登陆失败"
             statusCode = "400"
         }else{
             result = value[0]
@@ -93,13 +93,46 @@ class ApiController {
      */
     def checkSubmit(){
         //获取前台传递过来的参数
-        def checkDate = params.JSON.checkDate
+        def checkDate = request.JSON.checkDate
+        def checkNumber = request.JSON.checkNumber
+        def checkPeople = request.JSON.checkPeople
+        def departmentNumber  = request.JSON.departmentNumber
+        def data = request.JSON.data
+
+        def all =  request.JSON
+
 
         def statusMsg = "操作成功"
         def statusCode = "200"
         def result  = ""    //无数据的时候就是空字符串，因为已经有一个错误码400的判断了，所以这里不需要太担心。
 
-        def value = goodsService.checkSubmit()
+        def value = goodsService.checkSubmit(all)
+        //进行自定义返回结果的逻辑判断
+//        if(value.size() == 0){
+//            statusMsg = "无数据"
+//            statusCode = "400"
+//        }else{
+//            result = value
+//        }
+        result = value
+        def responseData = ["statusCode":statusCode,"statusMsg":statusMsg,"result":result]
+
+        render responseData as JSON
+    }
+
+
+    /**
+     * 获取盘点单的参数
+     */
+    def getCheckSubmitParameter(){
+        //获取前台传递过来的参数
+//        def checkDate = params.JSON.checkDate
+
+        def statusMsg = "操作成功"
+        def statusCode = "200"
+        def result  = ""    //无数据的时候就是空字符串，因为已经有一个错误码400的判断了，所以这里不需要太担心。
+
+        def value = goodsService.getCheckSubmitParameter()
         //进行自定义返回结果的逻辑判断
 //        if(value.size() == 0){
 //            statusMsg = "无数据"
@@ -116,7 +149,7 @@ class ApiController {
     /**
      * 查询商品
      */
-    def queryGoods(){
+    def queryGoodsByNumberOrBarcode(){
         def  number = request.JSON.number
         def  barcode = request.JSON.barcode
 
