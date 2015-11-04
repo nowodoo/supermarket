@@ -171,9 +171,11 @@ class GoodsService {
         all.data.each{
             //先将商品从数据库里面拿出来放到商品的表里面，然后将用户输入的信息合并到里面就好了。
             goods << dbInstance.rows("select * from goods where incode='"+it.incode+"'")[0]  //因为这里返回的每一个都是数组，所以要将第一个取出来
-            goods[goods_int].amount = it.amount;
-            goods[goods_int].remainder = it.remainder;
-            goods[goods_int].total = goods[goods_int].packnum*it.amount+it.remainder;
+            goods[goods_int].total = it.total;
+            goods[goods_int].amount = (goods[goods_int].total/goods[goods_int].packnum) as int;   //需要处理要是等于1
+            goods[goods_int].remainder = (goods[goods_int].total % (goods[goods_int].packnum as int)) as int;
+            goods[goods_int].price = it.price    //将前台传递的进价拿过来
+
             goods_int++;
         }
 
@@ -184,10 +186,10 @@ class GoodsService {
         def wramt_hj = 0
         goods.each{
             //将每一个商品的四个价格全部算出来(进价 售价 无税进价 无税售价)
-            iamt_hj +=(it.iamt = it.amount*it.packnum*it.inprc*(1+it.taxrate/100))  //捆 * 一捆多少个 * 一个的单价
-            ramt_hj +=(it.ramt = it.amount*it.packnum*it.snprc*(1+it.taxrate/100))
-            wiamt_hj +=(it.wiamt = it.amount*it.packnum*it.inprc)
-            wramt_hj +=(it.wramt = it.amount*it.packnum*it.snprc)
+            iamt_hj +=(it.iamt = it.total*it.inprc*(1+it.taxrate/100))  //捆 * 一捆多少个 * 一个的单价
+            ramt_hj +=(it.ramt = it.total*it.snprc*(1+it.taxrate/100))
+            wiamt_hj +=(it.wiamt = it.total*it.inprc)
+            wramt_hj +=(it.wramt = it.total*it.snprc)
         }
         println goods
 
@@ -228,6 +230,126 @@ class GoodsService {
         value.time = time
         value.chargePeople = chargePeople;
         return value
+    }
+
+    /**
+     * 返回收货需要的参数 日期 部门 经营方式 负责人 单据类型 供应商(号码和名称)
+     * @return
+     */
+    def getReceiveParameter(){
+        def value = [:]             //声明一个map
+        def dbInstance = sqlUtilService.getInstance()   //获取数据库实例
+
+        //取出所有的部门,标准
+        def depts =  dbInstance.rows("select * from dept where (dtype='S' or dtype='C') and code<>'Z00909'");
+
+        //获取所有的供应商号码
+        def suppliers = dbInstance.rows("select * from customer where flag='Y'")
+
+        //这里的时间不需要取出来，用户自己输入就好了。
+
+        //获取经营方式
+        def sellWay = [[code:"J",name:"经销"],[code:"D",name:"代销"]]
+
+        //获取负责人
+        def chargePeople = dbInstance.rows("select * from muser");
+
+        //获取单据类型
+        def receiptType = [[code:"0", name:"自购验收"],[code:"1", name:"协配验收"],[code:"2", name:"直配验收"]]
+
+
+        value.depts = depts
+        value.suppliers = suppliers
+        value.sellWay = sellWay
+        value.chargePeople = chargePeople
+        value.receiptType = receiptType
+        return value
+    }
+
+    /**
+     * 商品验收提交
+     * @return
+     */
+    def receiveSubmit(all){
+        def dbInstance = sqlUtilService.getInstance()
+
+        //首先获取商品验收单的最新号码
+        def orderNoStored = dbInstance.rows("select * from NextFormNo where FormType='sptoxs'")  //取出盘点单的下一个数字 标准
+        dbInstance.execute("update NextFormNo set NextNo ="+(orderNoStored.NextNo[0]+1)+" where FormType = 'sptoxs'"); //只要的取出来了，不管你有没有使用，这里都要把数值加1 标准
+        def orderNoString = '0' + (orderNoStored.NextNo[0] + 100000000)
+
+        //获取提交人
+        def submitPeople = all.submitPeople
+
+        //获取负责人号码
+        def chargePeople = all.chargePeople
+
+
+        //获取供应商的号码
+        def supplierNumber = all.supplierNumber
+
+        //获取部门号码
+        def deptNumber = all.deptNumber
+
+        //获取评论
+        def remark = all.remark
+
+        //获取盘点时间
+        def checkDate = all.checkDate;
+
+        //获取折扣率 折扣额 结算金额 税额
+        def discountRate = all.discountRate
+        def discountMoney = all.discountMoney
+        def accountMoney = all.accountMoney
+
+        //获取当前时间
+        java.sql.Date sqlTime = new java.sql.Date(System.currentTimeMillis())
+        def currentTimeString = sqlTime.format("yyyy-mm-dd")
+        def currentTimeStringDetail = sqlTime.format("yyyy-MM-dd HH:mm:ss")
+
+        //获取上传的用户信息
+        def user = dbInstance.rows("select * from muser where username='"+all.submitPeople+"'")
+
+        //获取手机端传过来的所有商品
+        def goods = []
+        def goods_int = 0
+        all.data.each{
+            //先将商品从数据库里面拿出来放到商品的表里面，然后将用户输入的信息合并到里面就好了。
+            goods << dbInstance.rows("select * from goods where incode='"+it.incode+"'")[0]  //因为这里返回的每一个都是数组，所以要将第一个取出来
+            goods[goods_int].total = it.total;
+            goods[goods_int].amount = (goods[goods_int].total/goods[goods_int].packnum) as int;   //需要处理要是等于1
+            goods[goods_int].remainder = (goods[goods_int].total % (goods[goods_int].packnum as int)) as int;
+            goods[goods_int].price = it.price    //将前台传递的进价拿过来
+            //用商品的总量去获取商品的总件数和零数
+
+            goods_int++;
+        }
+
+        //将所有的商品的有税的进价合计 有税的售价合计  无税的进价合计 无税的售价合计
+        def iamt_hj = 0
+        def ramt_hj = 0
+        def wiamt_hj = 0
+        def wramt_hj = 0
+        goods.each{
+            //将每一个商品的四个价格全部算出来(进价 售价 无税进价 无税售价)
+            iamt_hj +=(it.iamt = it.total*it.price*(1+it.taxrate/100))  //捆 * 一捆多少个 * 一个的单价  bug 需要加上零数
+            ramt_hj +=(it.ramt = it.total*it.snprc*(1+it.taxrate/100))
+            wiamt_hj +=(it.wiamt = it.total*it.price)
+            wramt_hj +=(it.wramt = it.total*it.snprc)
+        }
+
+
+        //写入sptox表
+        dbInstance.execute("insert into sptoxs (orderno, grpno, custno, sdate, zdpep, xgpep, fzpep, zddate, xgdate, jord, stat, iamt_hj, ramt_hj, wiamt_hj, wramt_hj, yhiamt, jsiamt, TaxTotal, Qty_hj, mxzflag, DingDanNo, remark, yspzno, yspzdate, JzDate, pType, sFlag, psOrderno) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                [orderNoString, deptNumber, supplierNumber, checkDate, user.userscrip[0], user.userscrip[0], user.userscrip[0], checkDate, checkDate, 'J', '1', iamt_hj, ramt_hj, wiamt_hj, wramt_hj, 1, 2, 3, 4, '', null, null, null, null, '', '0', null, null]);
+
+        //将数据全部存入sptoxsitem表
+        goods.each {
+            dbInstance.execute("insert into sptoxsitem (orderno, incode, barcode, fname, specs, unit, packunit, packnum, qty0, qty1, qty, lastiprc, iprc, rprc, iamt, ramt, wiamt, wramt, taxrate, jxtaxrate, giftqty, date1, date2, remark, addtime) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    [orderNoString, it.incode, it.barcode, it.fname, it.specs, it.unit, it.packunit, it.packnum, it.amount, it.remainder, it.total,'0', it.inprc, it.snprc, it.iamt, it.ramt, it.wiamt, it.wramt, it.taxrate, it.jxtaxrate, '0', null, null, null, currentTimeStringDetail])
+        }
+
+        return "ok"
     }
 
 }

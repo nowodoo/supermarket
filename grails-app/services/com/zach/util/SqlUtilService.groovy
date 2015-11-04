@@ -11,7 +11,7 @@ class SqlUtilService {
     def static port = new File("C:\\设备配置\\04数据库端口.txt").text
     def static username = new File("C:\\设备配置\\05用户名.txt").text
     def static password = new File("C:\\设备配置\\06密码.txt").text
-    def static sqlInstance = (department=='总部')?(Sql.newInstance("jdbc:jtds:sqlserver://"+headIP+":"+port+"/kchainii;CharacterSet=GBK",username,password,"net.sourceforge.jtds.jdbc.Driver")):(Sql.newInstance("jdbc:jtds:sqlserver://"+branchIP+":"+port+"/kjxcii;CharacterSet=GBK",username,password,"net.sourceforge.jtds.jdbc.Driver"))
+    def static sqlInstance = (department=='总部')?(Sql.newInstance("jdbc:jtds:sqlserver://"+headIP+":"+port+"/kchainii;CharacterSet=UTF-8",username,password,"net.sourceforge.jtds.jdbc.Driver")):(Sql.newInstance("jdbc:jtds:sqlserver://"+branchIP+":"+port+"/kjxcii;CharacterSet=UTF-8",username,password,"net.sourceforge.jtds.jdbc.Driver"))
 
     static def  getInstance(){
         return sqlInstance;

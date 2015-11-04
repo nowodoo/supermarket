@@ -147,6 +147,31 @@ class ApiController {
     }
 
     /**
+     * 获取收货的参数
+     */
+    def getReceiveParameter(){
+        //获取前台传递过来的参数
+//        def checkDate = params.JSON.checkDate
+
+        def statusMsg = "操作成功"
+        def statusCode = "200"
+        def result  = ""    //无数据的时候就是空字符串，因为已经有一个错误码400的判断了，所以这里不需要太担心。
+
+        def value = goodsService.getReceiveParameter()
+        //进行自定义返回结果的逻辑判断
+//        if(value.size() == 0){
+//            statusMsg = "无数据"
+//            statusCode = "400"
+//        }else{
+//            result = value
+//        }
+        result = value
+        def responseData = ["statusCode":statusCode,"statusMsg":statusMsg,"result":result]
+
+        render responseData as JSON
+    }
+
+    /**
      * 查询商品
      */
     def queryGoodsByNumberOrBarcode(){
@@ -166,6 +191,27 @@ class ApiController {
         }else{
             result = value[0]
         }
+        def responseData = ["statusCode":statusCode,"statusMsg":statusMsg,"result":result]
+
+        render responseData as JSON
+    }
+
+    /**
+     * 提交商品验收 接收的参数： 日期 部门 经营方式 负责人 单据类型 供应商 折扣率 折扣额 结算金额 税额
+     */
+    def receiveSubmit(){
+        def all = request.JSON
+
+        def statusMsg = "操作成功"
+        def statusCode = "200"
+
+        def result  = ""    //没有数据默认返回空串
+        def value =  goodsService.receiveSubmit(all)
+
+        //中间数据处理
+
+
+        result = value
         def responseData = ["statusCode":statusCode,"statusMsg":statusMsg,"result":result]
 
         render responseData as JSON
