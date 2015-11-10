@@ -214,14 +214,14 @@ class GoodsService {
         def value = [:]             //声明一个map
         def dbInstance = sqlUtilService.getInstance()   //获取数据库实例
         def depts =  dbInstance.rows("select * from dept where dtype='S' or dtype='C' order by code");  //取出所有的部门,标准
-        def number = dbInstance.rows("select NextNo from NextFormNo where FormType = 'sppandian'")  //取出盘点单的下一个数字 标准
+//        def number = dbInstance.rows("select NextNo from NextFormNo where FormType = 'sppandian'")  //取出盘点单的下一个数字 标准
 
         //这里需要判断是不是总部
         if(sqlUtilService.department == "总部"){
             //总部无法取得盘点号码
         }else{
             //分部的话需要将数值加1
-            dbInstance.execute("update NextFormNo set NextNo ="+(number.NextNo[0]+1)+" where FormType = 'sppandian'"); //只要的取出来了，不管你有没有使用，这里都要把数值加1 标准
+//            dbInstance.execute("update NextFormNo set NextNo ="+(number.NextNo[0]+1)+" where FormType = 'sppandian'"); //只要的取出来了，不管你有没有使用，这里都要把数值加1 标准
         }
 
 
@@ -234,7 +234,7 @@ class GoodsService {
 
         def chargePeople = dbInstance.rows("select * from muser")  //取出盘点单的下一个数字 标准
         value.depts = depts
-        value.number = number
+//        value.number = number
         value.time = time
         value.chargePeople = chargePeople;
         return value
@@ -338,18 +338,20 @@ class GoodsService {
         def ramt_hj = 0
         def wiamt_hj = 0
         def wramt_hj = 0
+        def Qty_hj = 0
         goods.each{
             //将每一个商品的四个价格全部算出来(进价 售价 无税进价 无税售价)
             iamt_hj +=(it.iamt = it.total*it.price*(1+it.taxrate/100))  //捆 * 一捆多少个 * 一个的单价  bug 需要加上零数
             ramt_hj +=(it.ramt = it.total*it.snprc*(1+it.taxrate/100))
             wiamt_hj +=(it.wiamt = it.total*it.price)
             wramt_hj +=(it.wramt = it.total*it.snprc)
+            Qty_hj += it.total  //所有的商品的总重量
         }
 
 
         //写入sptox表
         dbInstance.execute("insert into sptoxs (orderno, grpno, custno, sdate, zdpep, xgpep, fzpep, zddate, xgdate, jord, stat, iamt_hj, ramt_hj, wiamt_hj, wramt_hj, yhiamt, jsiamt, TaxTotal, Qty_hj, mxzflag, DingDanNo, remark, yspzno, yspzdate, JzDate, pType, sFlag, psOrderno) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                [orderNoString, deptNumber, supplierNumber, checkDate, user.userscrip[0], user.userscrip[0], user.userscrip[0], checkDate, checkDate, 'J', '1', iamt_hj, ramt_hj, wiamt_hj, wramt_hj, 1, 2, 3, 4, '', null, null, null, null, '', '0', null, null]);
+                [orderNoString, deptNumber, supplierNumber, checkDate, user.userscrip[0], user.userscrip[0], user.userscrip[0], checkDate, checkDate, 'J', '1', iamt_hj, ramt_hj, wiamt_hj, wramt_hj, 0, 0, 0, Qty_hj, '', null, null, null, null, '', '0', null, null]);
 
         //将数据全部存入sptoxsitem表
         goods.each {
