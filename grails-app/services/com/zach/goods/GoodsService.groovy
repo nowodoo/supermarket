@@ -141,6 +141,12 @@ class GoodsService {
     def checkSubmit(all){
         def dbInstance = sqlUtilService.getInstance()
 
+        //判断是不是存在盘点单号的字段,要是不存在，那么就建立一个，并且将初始值设为1
+        def orderNoStoredExist = dbInstance.rows("select NextNo from NextFormNo where FormType = 'sppandian'")  //取出盘点单的下一个数字 标准
+        if(orderNoStoredExist.size() == 0){
+            dbInstance.execute("insert into NextFormNo (FormType, NextNo, Tag) values(?,?,?)", ["sppandian", 1,"*"])
+        }
+
         //首先获取盘点订单的最新号码
         def orderNoStored = dbInstance.rows("select NextNo from NextFormNo where FormType = 'sppandian'")  //取出盘点单的下一个数字 标准
         dbInstance.execute("update NextFormNo set NextNo ="+(orderNoStored.NextNo[0]+1)+" where FormType = 'sppandian'"); //只要的取出来了，不管你有没有使用，这里都要把数值加1 标准
@@ -281,6 +287,12 @@ class GoodsService {
     def receiveSubmit(all){
         def dbInstance = sqlUtilService.getInstance()
 
+        //判断是不是存在单号的字段,要是不存在，那么就建立一个，并且将初始值设为1
+        def orderNoStoredExist = dbInstance.rows("select NextNo from NextFormNo where FormType = 'sptoxs'")  //取出盘点单的下一个数字 标准
+        if(orderNoStoredExist.size() == 0){
+            dbInstance.execute("insert into NextFormNo (FormType, NextNo, Tag) values(?,?,?)", ["sptoxs", 1,"*"])
+        }
+
         //首先获取商品验收单的最新号码
         def orderNoStored = dbInstance.rows("select * from NextFormNo where FormType='sptoxs'")  //取出盘点单的下一个数字 标准
         dbInstance.execute("update NextFormNo set NextNo ="+(orderNoStored.NextNo[0]+1)+" where FormType = 'sptoxs'"); //只要的取出来了，不管你有没有使用，这里都要把数值加1 标准
@@ -348,16 +360,29 @@ class GoodsService {
             Qty_hj += it.total  //所有的商品的总重量
         }
 
+        //由于总店和分店的表是不同的，这里需要判断之后进行，分店和总店需要分别操作
+        if("分部" == sqlUtilService.department){
+            //写入sptox表
+            dbInstance.execute("insert into sptoxs (orderno, grpno, custno, sdate, zdpep, xgpep, fzpep, zddate, xgdate, jord, stat, iamt_hj, ramt_hj, wiamt_hj, wramt_hj, yhiamt, jsiamt, TaxTotal, Qty_hj, mxzflag, DingDanNo, remark, yspzno, yspzdate, JzDate, pType, sFlag, psOrderno) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    [orderNoString, deptNumber, supplierNumber, checkDate, user.userscrip[0], user.userscrip[0], user.userscrip[0], checkDate, checkDate, 'J', '1', iamt_hj, ramt_hj, wiamt_hj, wramt_hj, 0, 0, 0, Qty_hj, '', null, null, null, null, '', '0', null, null]);
 
-        //写入sptox表
-        dbInstance.execute("insert into sptoxs (orderno, grpno, custno, sdate, zdpep, xgpep, fzpep, zddate, xgdate, jord, stat, iamt_hj, ramt_hj, wiamt_hj, wramt_hj, yhiamt, jsiamt, TaxTotal, Qty_hj, mxzflag, DingDanNo, remark, yspzno, yspzdate, JzDate, pType, sFlag, psOrderno) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                [orderNoString, deptNumber, supplierNumber, checkDate, user.userscrip[0], user.userscrip[0], user.userscrip[0], checkDate, checkDate, 'J', '1', iamt_hj, ramt_hj, wiamt_hj, wramt_hj, 0, 0, 0, Qty_hj, '', null, null, null, null, '', '0', null, null]);
+            //将数据全部存入sptoxsitem表
+            goods.each {
+                dbInstance.execute("insert into sptoxsitem (orderno, incode, barcode, fname, specs, unit, packunit, packnum, qty0, qty1, qty, lastiprc, iprc, rprc, iamt, ramt, wiamt, wramt, taxrate, jxtaxrate, giftqty, date1, date2, remark, addtime) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        [orderNoString, it.incode, it.barcode, it.fname, it.specs, it.unit, it.packunit, it.packnum, it.amount, it.remainder, it.total,'0', it.inprc, it.snprc, it.iamt, it.ramt, it.wiamt, it.wramt, it.taxrate, it.jxtaxrate, '0', null, null, null, currentTimeStringDetail])
+            }
+        } else if("总部" == sqlUtilService.department){
+            //写入sptox表
+            dbInstance.execute("insert into sptoxs (orderno, grpno, custno, sdate, zdpep, xgpep, fzpep, zddate, xgdate, jord, stat, iamt_hj, ramt_hj, wiamt_hj, wramt_hj, yhiamt, jsiamt, TaxTotal, Qty_hj, mxzflag, DingDanNo, remark, yspzno, yspzdate, JzDate, sFlag, zqday) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    [orderNoString, deptNumber, supplierNumber, checkDate, user.userscrip[0], user.userscrip[0], user.userscrip[0], checkDate, checkDate, 'J', '1', iamt_hj, ramt_hj, wiamt_hj, wramt_hj, 0, 0, 0, Qty_hj, '', null, null, null, null, '', null, null]);
 
-        //将数据全部存入sptoxsitem表
-        goods.each {
-            dbInstance.execute("insert into sptoxsitem (orderno, incode, barcode, fname, specs, unit, packunit, packnum, qty0, qty1, qty, lastiprc, iprc, rprc, iamt, ramt, wiamt, wramt, taxrate, jxtaxrate, giftqty, date1, date2, remark, addtime) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                    [orderNoString, it.incode, it.barcode, it.fname, it.specs, it.unit, it.packunit, it.packnum, it.amount, it.remainder, it.total,'0', it.inprc, it.snprc, it.iamt, it.ramt, it.wiamt, it.wramt, it.taxrate, it.jxtaxrate, '0', null, null, null, currentTimeStringDetail])
+            //将数据全部存入sptoxsitem表
+            goods.each {
+                dbInstance.execute("insert into sptoxsitem (orderno, incode, barcode, fname, specs, unit, packunit, packnum, qty0, qty1, qty, lastiprc, iprc, rprc, iamt, ramt, wiamt, wramt, taxrate, jxtaxrate, giftqty, date1, date2, remark, addtime) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        [orderNoString, it.incode, it.barcode, it.fname, it.specs, it.unit, it.packunit, it.packnum, it.amount, it.remainder, it.total,'0', it.inprc, it.snprc, it.iamt, it.ramt, it.wiamt, it.wramt, it.taxrate, it.jxtaxrate, '0', null, null, null, currentTimeStringDetail])
+            }
         }
+
 
         return "ok"
     }
