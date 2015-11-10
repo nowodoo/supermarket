@@ -18,13 +18,14 @@ class ApiController {
     def login() {
         def username = request.JSON.username
         def password = request.JSON.password
+        def mac = request.JSON.token
 
         def statusMsg = "操作成功"
         def statusCode = "200"
         def result  = ""    //无数据的时候就是空字符串，因为已经有一个错误码400的判断了，所以这里不需要太担心。
 
 
-        def value = userService.login(username, password);
+        def value = userService.login(username, password, mac);
 
         if(value.size() == 0){
             statusMsg = "登陆失败"
@@ -207,6 +208,27 @@ class ApiController {
 
         def result  = ""    //没有数据默认返回空串
         def value =  goodsService.receiveSubmit(all)
+
+        //中间数据处理
+
+
+        result = value
+        def responseData = ["statusCode":statusCode,"statusMsg":statusMsg,"result":result]
+
+        render responseData as JSON
+    }
+
+    /**
+     * 打印价签
+     */
+    def printPriceTag(){
+        def all = request.JSON
+
+        def statusMsg = "操作成功"
+        def statusCode = "200"
+
+        def result  = ""    //没有数据默认返回空串
+        def value =  goodsService.printPriceTag(all)
 
         //中间数据处理
 

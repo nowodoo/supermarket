@@ -4,6 +4,7 @@ import com.zach.util.SqlUtilService
 import grails.converters.JSON
 import grails.transaction.Transactional
 
+import java.sql.Timestamp
 import java.text.SimpleDateFormat
 
 @Transactional
@@ -159,7 +160,7 @@ class GoodsService {
 
         //获取当前时间
         java.sql.Date sqlTime = new java.sql.Date(System.currentTimeMillis())
-        def currentTimeString = sqlTime.format("yyyy-mm-dd")
+        def currentTimeString = sqlTime.format("yyyy-MM-dd")
         def currentTimeStringDetail = sqlTime.format("yyyy-MM-dd HH:mm:ss")
 
         //获取上传的用户信息
@@ -191,7 +192,6 @@ class GoodsService {
             wiamt_hj +=(it.wiamt = it.total*it.inprc)
             wramt_hj +=(it.wramt = it.total*it.snprc)
         }
-        println goods
 
         //写入sppandian表
         dbInstance.execute("insert into sppandian (orderno, grpno, pddate, sdate, zdpep, xgpep, fzpep, zddate, xgdate, stat, iamt_hj, ramt_hj, wiamt_hj, wramt_hj, remark, yspzno, yspzdate) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -203,7 +203,7 @@ class GoodsService {
                     [orderNoString, it.incode, it.barcode, it.fname, it.specs, it.unit, it.packunit, it.packnum, it.stype, it.inprc, it.snprc, it.amount, it.remainder, it.total, it.iamt, it.ramt, it.wiamt, it.wramt, it.taxrate, it.jxtaxrate, it.jord, currentTimeStringDetail])
         }
 
-        return "checkSubmit"
+        return "success"
     }
 
     /**
@@ -215,7 +215,15 @@ class GoodsService {
         def dbInstance = sqlUtilService.getInstance()   //获取数据库实例
         def depts =  dbInstance.rows("select * from dept where dtype='S' or dtype='C' order by code");  //取出所有的部门,标准
         def number = dbInstance.rows("select NextNo from NextFormNo where FormType = 'sppandian'")  //取出盘点单的下一个数字 标准
-        dbInstance.execute("update NextFormNo set NextNo ="+(number.NextNo[0]+1)+" where FormType = 'sppandian'"); //只要的取出来了，不管你有没有使用，这里都要把数值加1 标准
+
+        //这里需要判断是不是总部
+        if(sqlUtilService.department == "总部"){
+            //总部无法取得盘点号码
+        }else{
+            //分部的话需要将数值加1
+            dbInstance.execute("update NextFormNo set NextNo ="+(number.NextNo[0]+1)+" where FormType = 'sppandian'"); //只要的取出来了，不管你有没有使用，这里都要把数值加1 标准
+        }
+
 
         //获取所有盘点日期
         def timeObject = dbInstance.rows("select pdDate from pandiandate order by pdDate desc,Sn desc")       //取出所有的盘点的日期进行选择，这里设置了排序 标准
@@ -304,7 +312,7 @@ class GoodsService {
 
         //获取当前时间
         java.sql.Date sqlTime = new java.sql.Date(System.currentTimeMillis())
-        def currentTimeString = sqlTime.format("yyyy-mm-dd")
+        def currentTimeString = sqlTime.format("yyyy-MM-dd")
         def currentTimeStringDetail = sqlTime.format("yyyy-MM-dd HH:mm:ss")
 
         //获取上传的用户信息
@@ -348,6 +356,54 @@ class GoodsService {
             dbInstance.execute("insert into sptoxsitem (orderno, incode, barcode, fname, specs, unit, packunit, packnum, qty0, qty1, qty, lastiprc, iprc, rprc, iamt, ramt, wiamt, wramt, taxrate, jxtaxrate, giftqty, date1, date2, remark, addtime) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     [orderNoString, it.incode, it.barcode, it.fname, it.specs, it.unit, it.packunit, it.packnum, it.amount, it.remainder, it.total,'0', it.inprc, it.snprc, it.iamt, it.ramt, it.wiamt, it.wramt, it.taxrate, it.jxtaxrate, '0', null, null, null, currentTimeStringDetail])
         }
+
+        return "ok"
+    }
+
+    /**
+     * 打印价签
+     * @return
+     * mName nvarchar(50) not null,	--机器名称
+     * sdate datetime not null,	--采集日期
+     * orderno nvarchar(100) not null,	--单号：日期+时间+机器号，格式YYYYMMDDhhmmss001，如20151031075959001
+     * incode nvarchar(13) not null,	--商品编码
+     * barcode nvarchar(30),		--商品条码
+     * ctime datetime)			--采集时间
+     */
+    def printPriceTag(all){
+        def dbInstance = sqlUtilService.getInstance()
+
+        //获取当前时间
+        java.sql.Date sqlTime = new java.sql.Date(System.currentTimeMillis())
+        def currentTimeString = sqlTime.format("yyyy-MM-dd")
+        def currentTimeStringDetail = sqlTime.format("yyyy-MM-dd HH:mm:ss")
+
+
+        //遍历所有的商品 bug 时间的处理应该添加毫秒
+        all.data.each{
+            //获取单号：日期+时间+机器号，格式YYYYMMDDhhmmss001，如20151031075959001
+            def currentTimeOrderNumber = sqlTime.format("YYYYMMddhhmmss") + it.mName+""
+
+            //首先使用incode去查找商品要是有了就直接去忽略二维码
+            def goods
+            def goodsByIncode = dbInstance.rows("select * from goods where incode = '" + it.incode+"'");
+            def goodsByBarcode = dbInstance.rows("select * from goods where barcode = '" + it.barcode+"'");
+            if (goodsByIncode.size() > 0){
+                goods = goodsByIncode[0]
+            }else if(goodsByBarcode.size() > 0){
+                goods = goodsByBarcode[0]
+            }else{
+                goods = null;
+            }
+
+            if(goods){
+                //获取timestamp, 格式 2015-11-10 10:32:51.978
+                Timestamp timestamp = new Timestamp(System.currentTimeMillis())
+                dbInstance.execute("insert into prnlistcj(mName, sdate, orderno, incode, barcode, ctime) values (?,?,?,?,?,?)",[it.mName, currentTimeString, currentTimeOrderNumber, goods.incode, goods.barcode, timestamp.toString()]);
+            }
+        }
+
+
 
         return "ok"
     }
