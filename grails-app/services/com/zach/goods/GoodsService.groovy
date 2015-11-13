@@ -360,11 +360,17 @@ class GoodsService {
             Qty_hj += it.total  //所有的商品的总重量
         }
 
+        //计算优惠额度
+        def yhiamt      //总价优惠了多少钱
+        def jsiamt      //优惠之后的总价
+        yhiamt = iamt_hj * (all.discountRate/100)
+        jsiamt = iamt_hj - yhiamt
+
         //由于总店和分店的表是不同的，这里需要判断之后进行，分店和总店需要分别操作
         if("分部" == sqlUtilService.department){
             //写入sptox表
             dbInstance.execute("insert into sptoxs (orderno, grpno, custno, sdate, zdpep, xgpep, fzpep, zddate, xgdate, jord, stat, iamt_hj, ramt_hj, wiamt_hj, wramt_hj, yhiamt, jsiamt, TaxTotal, Qty_hj, mxzflag, DingDanNo, remark, yspzno, yspzdate, JzDate, pType, sFlag, psOrderno) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                    [orderNoString, deptNumber, supplierNumber, checkDate, user.userscrip[0], user.userscrip[0], user.userscrip[0], checkDate, checkDate, 'J', '1', iamt_hj, ramt_hj, wiamt_hj, wramt_hj, 0, 0, 0, Qty_hj, '', null, null, null, null, '', '0', null, null]);
+                    [orderNoString, deptNumber, supplierNumber, checkDate, user.userscrip[0], user.userscrip[0], user.userscrip[0], checkDate, checkDate, 'J', '1', iamt_hj, ramt_hj, wiamt_hj, wramt_hj, yhiamt, jsiamt, 0, Qty_hj, '', null, null, null, null, '', '0', null, null]);
 
             //将数据全部存入sptoxsitem表
             goods.each {
