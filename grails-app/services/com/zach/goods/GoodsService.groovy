@@ -201,7 +201,7 @@ class GoodsService {
 
         //写入sppandian表
         dbInstance.execute("insert into sppandian (orderno, grpno, pddate, sdate, zdpep, xgpep, fzpep, zddate, xgdate, stat, iamt_hj, ramt_hj, wiamt_hj, wramt_hj, remark, yspzno, yspzdate) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        [orderNoString, deptNumber, checkDate, checkDate, user.userscrip[0], user.userscrip[0], user.userscrip[0], checkDate, checkDate, '1', iamt_hj, ramt_hj, wiamt_hj, wramt_hj, remark, '', checkDate]);
+        [orderNoString, deptNumber, checkDate, checkDate, user.userscrip[0], user.userscrip[0], user.userscrip[0], checkDate, checkDate, '0', iamt_hj, ramt_hj, wiamt_hj, wramt_hj, remark, '', checkDate]);
 
         //将数据全部存入sppandianitem表
         goods.each {
@@ -370,7 +370,7 @@ class GoodsService {
         if("分部" == sqlUtilService.department){
             //写入sptox表
             dbInstance.execute("insert into sptoxs (orderno, grpno, custno, sdate, zdpep, xgpep, fzpep, zddate, xgdate, jord, stat, iamt_hj, ramt_hj, wiamt_hj, wramt_hj, yhiamt, jsiamt, TaxTotal, Qty_hj, mxzflag, DingDanNo, remark, yspzno, yspzdate, JzDate, pType, sFlag, psOrderno) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                    [orderNoString, deptNumber, supplierNumber, checkDate, user.userscrip[0], user.userscrip[0], user.userscrip[0], checkDate, checkDate, 'J', '1', iamt_hj, ramt_hj, wiamt_hj, wramt_hj, yhiamt, jsiamt, 0, Qty_hj, '', null, null, null, null, '', '0', null, null]);
+                    [orderNoString, deptNumber, supplierNumber, checkDate, user.userscrip[0], user.userscrip[0], user.userscrip[0], checkDate, checkDate, 'J', '0', iamt_hj, ramt_hj, wiamt_hj, wramt_hj, yhiamt, jsiamt, 0, Qty_hj, '', null, null, null, null, '', '0', null, null]);
 
             //将数据全部存入sptoxsitem表
             goods.each {
@@ -380,7 +380,7 @@ class GoodsService {
         } else if("总部" == sqlUtilService.department){
             //写入sptox表
             dbInstance.execute("insert into sptoxs (orderno, grpno, custno, sdate, zdpep, xgpep, fzpep, zddate, xgdate, jord, stat, iamt_hj, ramt_hj, wiamt_hj, wramt_hj, yhiamt, jsiamt, TaxTotal, Qty_hj, mxzflag, DingDanNo, remark, yspzno, yspzdate, JzDate, sFlag, zqday) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                    [orderNoString, deptNumber, supplierNumber, checkDate, user.userscrip[0], user.userscrip[0], user.userscrip[0], checkDate, checkDate, 'J', '1', iamt_hj, ramt_hj, wiamt_hj, wramt_hj, 0, 0, 0, Qty_hj, '', null, null, null, null, '', null, null]);
+                    [orderNoString, deptNumber, supplierNumber, checkDate, user.userscrip[0], user.userscrip[0], user.userscrip[0], checkDate, checkDate, 'J', '0', iamt_hj, ramt_hj, wiamt_hj, wramt_hj, 0, 0, 0, Qty_hj, '', null, null, null, null, '', null, null]);
 
             //将数据全部存入sptoxsitem表
             goods.each {
