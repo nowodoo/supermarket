@@ -6,6 +6,7 @@ class ApiController {
 
     def userService
     def goodsService
+    def desUtil
 
     def index() {
         render "ok"
@@ -241,9 +242,12 @@ class ApiController {
 
 
 
-    def test(){
-        def value = userService.test()
-        println value.size()
-        render "test"
+    def mac(){
+        def mac = params.mac
+        def key = params.key
+
+        def result = desUtil.encrypt(mac, key);
+
+        render result
     }
 }

@@ -8,6 +8,7 @@ import java.lang.*
 class UserService {
     def sqlUtilService
     def pswUtil
+    def desUtil
 
     def login(username, password, mac) {
         def dbInstance = sqlUtilService.getInstance()
@@ -20,13 +21,19 @@ class UserService {
 
         //获取用户的mac地址
         def macValidated = false
-        def macs
+        def macs   //原先的mac地址
+        def macsDes = []  //解密之后的mac地址
         def file = new File("C:\\设备配置\\07用户.txt")
         if(file.exists()){
             macs =  file.text.split(",")
         }
-        //遍历用户的mac地址，看看是否合法
+        //将所有的字符串解密
         macs.each{
+            def r = desUtil.decrypt(it, "macdizhi")
+            macsDes << r
+        }
+
+        macsDes.each{
             if(it == mac){
                 macValidated = true;
             }

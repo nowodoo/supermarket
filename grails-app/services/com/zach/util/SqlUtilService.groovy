@@ -1,9 +1,8 @@
 package com.zach.util
 
-import grails.transaction.Transactional
 import groovy.sql.Sql
 
-@Transactional
+
 class SqlUtilService {
     def static department = new File("C:\\设备配置\\01部门.txt").text
     def static headIP = new File("C:\\设备配置\\02总部数据库IP.txt").text
