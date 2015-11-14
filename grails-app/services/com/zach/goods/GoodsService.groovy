@@ -258,6 +258,7 @@ class GoodsService {
         def ramt_hj = 0
         def wiamt_hj = 0
         def wramt_hj = 0
+        def qty_hj = 0   //合计所有的数量
         goods.each{
             //将每一个商品的四个价格全部算出来(进价 售价 无税进价 无税售价)
             iamt_hj +=(it.iamt = it.total*it.inprc*(1+it.taxrate/100))  //捆 * 一捆多少个 * 一个的单价
@@ -266,9 +267,11 @@ class GoodsService {
             wramt_hj +=(it.wramt = it.total*it.snprc)
         }
 
+        //总店和分店的不同就是在sppandian表里有一个qty_hj的字段，但是经过测试这里没有需要的文件
         //写入sppandian表
         dbInstance.execute("insert into sppandian (orderno, grpno, pddate, sdate, zdpep, xgpep, fzpep, zddate, xgdate, stat, iamt_hj, ramt_hj, wiamt_hj, wramt_hj, remark, yspzno, yspzdate) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        [orderNoString, deptNumber, checkDate, checkDate, user.userscrip[0], user.userscrip[0], user.userscrip[0], checkDate, checkDate, '0', iamt_hj, ramt_hj, wiamt_hj, wramt_hj, remark, '', checkDate]);
+                [orderNoString, deptNumber, checkDate, checkDate, user.userscrip[0], user.userscrip[0], user.userscrip[0], checkDate, checkDate, '0', iamt_hj, ramt_hj, wiamt_hj, wramt_hj, remark, '', checkDate]);
+
 
         //将数据全部存入sppandianitem表
         goods.each {
@@ -447,7 +450,7 @@ class GoodsService {
         } else if("总部" == sqlUtilService.department){
             //写入sptox表
             dbInstance.execute("insert into sptoxs (orderno, grpno, custno, sdate, zdpep, xgpep, fzpep, zddate, xgdate, jord, stat, iamt_hj, ramt_hj, wiamt_hj, wramt_hj, yhiamt, jsiamt, TaxTotal, Qty_hj, mxzflag, DingDanNo, remark, yspzno, yspzdate, JzDate, sFlag, zqday) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                    [orderNoString, deptNumber, supplierNumber, checkDate, user.userscrip[0], user.userscrip[0], user.userscrip[0], checkDate, checkDate, 'J', '0', iamt_hj, ramt_hj, wiamt_hj, wramt_hj, 0, 0, 0, Qty_hj, '', null, null, null, null, '', null, null]);
+                    [orderNoString, deptNumber, supplierNumber, checkDate, user.userscrip[0], user.userscrip[0], user.userscrip[0], checkDate, checkDate, 'J', '0', iamt_hj, ramt_hj, wiamt_hj, wramt_hj, yhiamt, jsiamt, 0, Qty_hj, '', null, null, null, null, '', null, null]);
 
             //将数据全部存入sptoxsitem表
             goods.each {
