@@ -32,70 +32,137 @@ class GoodsService {
         def goods = []
 
         def dbInstance = sqlUtilService.getInstance();
-        //只要是商品的number添加了就不再添加管条形码了
-        if(number){
-            dbInstance.eachRow("select * from Goods where incode = '"+number+"'",{
-                def value = [:]
-                value.goodsName = it.fname  //商品名称
-                value.incode = it.incode
-                value.barcode = it.barcode
-                value.packnum = it.packnum
-                value.specs = (it.specs==null)?"":it.specs  //规格
-                value.unit = it.unit        //单价
-                value.inprc = it.inprc      //进价
-                value.snprc = it.snprc      //售价
-                def numberRepos = dbInstance.rows("select * from ware_sr where incode='"+number+"'")      //获取总的数量
-                value.suppliers = dbInstance.rows("select a.incode, a.custno, a.Iprc, b.custname, b.shortname, b.dtype, b.addr, b.tel, b.faxnum from Ware_sr a left join Customer b on a.custno = b.custno where a.incode = '"+it.incode+"'")    //获取这个商品的供应商
+        //分店的逻辑
+        if("分部" == sqlUtilService.department){
+            //只要是商品的number添加了就不再添加管条形码了
+            if(number){
+                dbInstance.eachRow("select * from Goods where incode = '"+number+"'",{
+                    def value = [:]
+                    value.goodsName = it.fname  //商品名称
+                    value.incode = it.incode
+                    value.barcode = it.barcode
+                    value.packnum = it.packnum
+                    value.specs = (it.specs==null)?"":it.specs  //规格
+                    value.unit = it.unit        //单价
+                    value.inprc = it.inprc      //进价
+                    value.snprc = it.snprc      //售价
+                    def numberRepos = dbInstance.rows("select * from ware_sr where incode='"+it.incode+"'")      //获取总的数量
+                    value.suppliers = dbInstance.rows("select a.incode, a.custno, a.Iprc, b.custname, b.shortname, b.dtype, b.addr, b.tel, b.faxnum from Ware_sr a left join Customer b on a.custno = b.custno where a.incode = '"+it.incode+"'")    //获取这个商品的供应商
 
-                //将库存里面的数值添加进相应的供应商里面(方法就是通过两次数组的遍历将数据添加，每一个数组代表着选数据库中选出来的行)
-                def numberRepoSum = 0;
-                numberRepos.each{
-                    for(int i = 0; i < value.suppliers.size(); i++){
-                        if(it.custno == value.suppliers[i].custno){
-                            value.suppliers[i].numberRepo = it.jxqty+it.dxqty+it.lxqty
-                            numberRepoSum+=value.suppliers[i].numberRepo;
+                    //将库存里面的数值添加进相应的供应商里面(方法就是通过两次数组的遍历将数据添加，每一个数组代表着选数据库中选出来的行)
+                    def numberRepoSum = 0;
+                    numberRepos.each{
+                        for(int i = 0; i < value.suppliers.size(); i++){
+                            if(it.custno == value.suppliers[i].custno){
+                                value.suppliers[i].numberRepo = it.jxqty+it.dxqty+it.lxqty
+                                numberRepoSum+=value.suppliers[i].numberRepo;
+                            }
                         }
                     }
-                }
-                //获取同一件商品的所有供应商的数量
-                value.numberRepoSum = numberRepoSum
+                    //获取同一件商品的所有供应商的数量
+                    value.numberRepoSum = numberRepoSum
 
 
-                goods << value
-            })
-        }else{
-            dbInstance.eachRow("select * from Goods where barcode = '"+barcode+"'",{
-                def value = [:]
-                value.goodsName = it.fname  //商品名称
-                value.incode = it.incode
-                value.barcode = it.barcode
-                value.packnum = it.packnum
-                value.specs = (it.specs==null)?"":it.specs  //规格
-                value.unit = it.unit        //单价
-                value.inprc = it.inprc      //进价
-                value.snprc = it.snprc      //售价
-                def numberRepos = dbInstance.rows("select * from ware_sr where incode='"+number+"'")      //获取总的数量
-                value.suppliers = dbInstance.rows("select a.incode, a.custno, a.Iprc, b.custname, b.shortname, b.dtype, b.addr, b.tel, b.faxnum from Ware_sr a left join Customer b on a.custno = b.custno where a.incode = '"+it.incode+"'")    //获取这个商品的供应商
+                    goods << value
+                })
+            }else{
+                dbInstance.eachRow("select * from Goods where barcode = '"+barcode+"'",{
+                    def value = [:]
+                    value.goodsName = it.fname  //商品名称
+                    value.incode = it.incode
+                    value.barcode = it.barcode
+                    value.packnum = it.packnum
+                    value.specs = (it.specs==null)?"":it.specs  //规格
+                    value.unit = it.unit        //单价
+                    value.inprc = it.inprc      //进价
+                    value.snprc = it.snprc      //售价
+                    def numberRepos = dbInstance.rows("select * from ware_sr where incode='"+it.incode+"'")      //获取总的数量
+                    value.suppliers = dbInstance.rows("select a.incode, a.custno, a.Iprc, b.custname, b.shortname, b.dtype, b.addr, b.tel, b.faxnum from Ware_sr a left join Customer b on a.custno = b.custno where a.incode = '"+it.incode+"'")    //获取这个商品的供应商
 
-                //将库存里面的数值添加进相应的供应商里面(方法就是通过两次数组的遍历将数据添加，每一个数组代表着选数据库中选出来的行)
-                def numberRepoSum = 0;
-                numberRepos.each{
-                    for(int i = 0; i < value.suppliers.size(); i++){
-                        if(it.custno == value.suppliers[i].custno){
-                            value.suppliers[i].numberRepo = it.jxqty+it.dxqty+it.lxqty
-                            numberRepoSum+=value.suppliers[i].numberRepo;
+                    //将库存里面的数值添加进相应的供应商里面(方法就是通过两次数组的遍历将数据添加，每一个数组代表着选数据库中选出来的行)
+                    def numberRepoSum = 0;
+                    numberRepos.each{
+                        for(int i = 0; i < value.suppliers.size(); i++){
+                            if(it.custno == value.suppliers[i].custno){
+                                value.suppliers[i].numberRepo = it.jxqty+it.dxqty+it.lxqty
+                                numberRepoSum+=value.suppliers[i].numberRepo;
+                            }
                         }
                     }
-                }
-                //获取同一件商品的所有供应商的数量
-                value.numberRepoSum = numberRepoSum
+                    //获取同一件商品的所有供应商的数量
+                    value.numberRepoSum = numberRepoSum
 
 
-                goods << value
-            })
+                    goods << value
+                })
+            }
+        }else if("总部" == sqlUtilService.department){
+            //只要是商品的number添加了就不再添加管条形码了
+            if(number){
+                dbInstance.eachRow("select * from Goods where incode = '"+number+"'",{
+                    def value = [:]   //每一个value表示一个商品
+                    value.goodsName = it.fname  //商品名称
+                    value.incode = it.incode
+                    value.barcode = it.barcode
+                    value.packnum = it.packnum
+                    value.specs = (it.specs==null)?"":it.specs  //规格
+                    value.unit = it.unit        //单价
+                    value.inprc = it.inprc      //进价
+                    value.snprc = it.snprc      //售价
+                    def numberRepos = dbInstance.rows("select * from ware_sr where incode='"+it.incode+"'")      //获取总的数量  获取ware_sr表里面的所有行
+                    value.suppliers = dbInstance.rows("select a.qty, a.incode, a.custno, a.Iprc, b.custname, b.shortname, b.dtype, b.addr, b.tel, b.faxnum from Ware_sr a left join Customer b on a.custno = b.custno where a.incode = '"+it.incode+"'")    //获取这个商品的供应商
+
+                    //获取所有的库存总数
+                    def numberRepoSum = 0;
+                    numberRepos.each{  //遍历这个商品的每一次库存
+                        numberRepoSum+=it.qty
+                    }
+
+                    //将每一个供应商拥有的商品计算总量
+                    value.suppliers.each{
+                        it.numberRepo = it.qty
+                    }
+
+                    //获取同一件商品的所有供应商的数量
+                    value.numberRepoSum = numberRepoSum
+
+
+                    goods << value
+                })
+            }else{
+                dbInstance.eachRow("select * from Goods where barcode = '"+barcode+"'",{
+                    def value = [:]   //每一个value表示一个商品
+                    value.goodsName = it.fname  //商品名称
+                    value.incode = it.incode
+                    value.barcode = it.barcode
+                    value.packnum = it.packnum
+                    value.specs = (it.specs==null)?"":it.specs  //规格
+                    value.unit = it.unit        //单价
+                    value.inprc = it.inprc      //进价
+                    value.snprc = it.snprc      //售价
+                    def numberRepos = dbInstance.rows("select * from ware_sr where incode='"+it.incode+"'")      //获取总的数量  获取ware_sr表里面的所有行
+                    value.suppliers = dbInstance.rows("select a.qty, a.incode, a.custno, a.Iprc, b.custname, b.shortname, b.dtype, b.addr, b.tel, b.faxnum from Ware_sr a left join Customer b on a.custno = b.custno where a.incode = '"+it.incode+"'")    //获取这个商品的供应商
+
+                    //获取所有的库存总数
+                    def numberRepoSum = 0;
+                    numberRepos.each{  //遍历这个商品的每一次库存
+                        numberRepoSum+=it.qty
+                    }
+
+                    //将每一个供应商拥有的商品计算总量
+                    value.suppliers.each{
+                        it.numberRepo = it.qty
+                    }
+
+                    //获取同一件商品的所有供应商的数量
+                    value.numberRepoSum = numberRepoSum
+
+                    goods << value
+                })
+            }
         }
 
-        return goods
+
         return goods
 
     }
@@ -375,7 +442,7 @@ class GoodsService {
             //将数据全部存入sptoxsitem表
             goods.each {
                 dbInstance.execute("insert into sptoxsitem (orderno, incode, barcode, fname, specs, unit, packunit, packnum, qty0, qty1, qty, lastiprc, iprc, rprc, iamt, ramt, wiamt, wramt, taxrate, jxtaxrate, giftqty, date1, date2, remark, addtime) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                        [orderNoString, it.incode, it.barcode, it.fname, it.specs, it.unit, it.packunit, it.packnum, it.amount, it.remainder, it.total,'0', it.inprc, it.snprc, it.iamt, it.ramt, it.wiamt, it.wramt, it.taxrate, it.jxtaxrate, '0', null, null, null, currentTimeStringDetail])
+                        [orderNoString, it.incode, it.barcode, it.fname, it.specs, it.unit, it.packunit, it.packnum, it.amount, it.remainder, it.total,'0', it.price, it.snprc, it.iamt, it.ramt, it.wiamt, it.wramt, it.taxrate, it.jxtaxrate, '0', null, null, null, currentTimeStringDetail])
             }
         } else if("总部" == sqlUtilService.department){
             //写入sptox表
@@ -385,7 +452,7 @@ class GoodsService {
             //将数据全部存入sptoxsitem表
             goods.each {
                 dbInstance.execute("insert into sptoxsitem (orderno, incode, barcode, fname, specs, unit, packunit, packnum, qty0, qty1, qty, lastiprc, iprc, rprc, iamt, ramt, wiamt, wramt, taxrate, jxtaxrate, giftqty, date1, date2, remark, addtime) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                        [orderNoString, it.incode, it.barcode, it.fname, it.specs, it.unit, it.packunit, it.packnum, it.amount, it.remainder, it.total,'0', it.inprc, it.snprc, it.iamt, it.ramt, it.wiamt, it.wramt, it.taxrate, it.jxtaxrate, '0', null, null, null, currentTimeStringDetail])
+                        [orderNoString, it.incode, it.barcode, it.fname, it.specs, it.unit, it.packunit, it.packnum, it.amount, it.remainder, it.total,'0', it.price, it.snprc, it.iamt, it.ramt, it.wiamt, it.wramt, it.taxrate, it.jxtaxrate, '0', null, null, null, currentTimeStringDetail])
             }
         }
 
