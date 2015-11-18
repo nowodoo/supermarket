@@ -38,6 +38,7 @@ class GoodsService {
             if(number){
                 dbInstance.eachRow("select * from Goods where incode = '"+number+"'",{
                     def value = [:]
+                    def inprc = it.inprc
                     value.goodsName = it.fname  //商品名称
                     value.incode = it.incode
                     value.barcode = it.barcode
@@ -47,18 +48,29 @@ class GoodsService {
                     value.inprc = it.inprc      //进价
                     value.snprc = it.snprc      //售价
                     def numberRepos = dbInstance.rows("select * from ware_sr where incode='"+it.incode+"'")      //获取总的数量
-                    value.suppliers = dbInstance.rows("select a.incode, a.custno, a.Iprc, b.custname, b.shortname, b.dtype, b.addr, b.tel, b.faxnum from Ware_sr a left join Customer b on a.custno = b.custno where a.incode = '"+it.incode+"'")    //获取这个商品的供应商
+                    value.suppliers = dbInstance.rows("select a.incode, a.custno, a.Iprc, a.jxqty, a.dxqty, a.lxqty, b.custname, b.shortname, b.dtype, b.addr, b.tel, b.faxnum from Ware_sr a left join Customer b on a.custno = b.custno where a.incode = '"+it.incode+"'")    //获取这个商品的供应商
 
                     //将库存里面的数值添加进相应的供应商里面(方法就是通过两次数组的遍历将数据添加，每一个数组代表着选数据库中选出来的行)
+//                    def numberRepoSum = 0;
+//                    numberRepos.each{
+//                        for(int i = 0; i < value.suppliers.size(); i++){
+//                            if(it.custno == value.suppliers[i].custno){
+//                                value.suppliers[i].numberRepo = it.jxqty+it.dxqty+it.lxqty
+//                                numberRepoSum+=value.suppliers[i].numberRepo;
+//                            }
+//                        }
+//                    }
+
+                    //获取所有的库存总数
                     def numberRepoSum = 0;
-                    numberRepos.each{
-                        for(int i = 0; i < value.suppliers.size(); i++){
-                            if(it.custno == value.suppliers[i].custno){
-                                value.suppliers[i].numberRepo = it.jxqty+it.dxqty+it.lxqty
-                                numberRepoSum+=value.suppliers[i].numberRepo;
-                            }
-                        }
+
+                    //将每一个供应商拥有的商品计算总量
+                    value.suppliers.each{
+                        it.numberRepo = it.jxqty+it.dxqty+it.lxqty
+                        it.iprc = inprc
+                        numberRepoSum += it.numberRepo;
                     }
+
                     //获取同一件商品的所有供应商的数量
                     value.numberRepoSum = numberRepoSum
 
@@ -68,6 +80,7 @@ class GoodsService {
             }else{
                 dbInstance.eachRow("select * from Goods where barcode = '"+barcode+"'",{
                     def value = [:]
+                    def inprc = it.inprc   //获取这个商品的价格
                     value.goodsName = it.fname  //商品名称
                     value.incode = it.incode
                     value.barcode = it.barcode
@@ -77,17 +90,17 @@ class GoodsService {
                     value.inprc = it.inprc      //进价
                     value.snprc = it.snprc      //售价
                     def numberRepos = dbInstance.rows("select * from ware_sr where incode='"+it.incode+"'")      //获取总的数量
-                    value.suppliers = dbInstance.rows("select a.incode, a.custno, a.Iprc, b.custname, b.shortname, b.dtype, b.addr, b.tel, b.faxnum from Ware_sr a left join Customer b on a.custno = b.custno where a.incode = '"+it.incode+"'")    //获取这个商品的供应商
+                    value.suppliers = dbInstance.rows("select a.incode, a.custno, a.Iprc, a.jxqty, a.dxqty, a.lxqty, b.custname, b.shortname, b.dtype, b.addr, b.tel, b.faxnum from Ware_sr a left join Customer b on a.custno = b.custno where a.incode = '"+it.incode+"'")    //获取这个商品的供应商
 
                     //将库存里面的数值添加进相应的供应商里面(方法就是通过两次数组的遍历将数据添加，每一个数组代表着选数据库中选出来的行)
+                    //获取所有的库存总数
                     def numberRepoSum = 0;
-                    numberRepos.each{
-                        for(int i = 0; i < value.suppliers.size(); i++){
-                            if(it.custno == value.suppliers[i].custno){
-                                value.suppliers[i].numberRepo = it.jxqty+it.dxqty+it.lxqty
-                                numberRepoSum+=value.suppliers[i].numberRepo;
-                            }
-                        }
+
+                    //将每一个供应商拥有的商品计算总量
+                    value.suppliers.each{
+                        it.numberRepo = it.jxqty+it.dxqty+it.lxqty
+                        it.iprc = inprc
+                        numberRepoSum += it.numberRepo;
                     }
                     //获取同一件商品的所有供应商的数量
                     value.numberRepoSum = numberRepoSum
@@ -101,6 +114,7 @@ class GoodsService {
             if(number){
                 dbInstance.eachRow("select * from Goods where incode = '"+number+"'",{
                     def value = [:]   //每一个value表示一个商品
+                    def inprc = it.inprc   //获取这个商品的价格
                     value.goodsName = it.fname  //商品名称
                     value.incode = it.incode
                     value.barcode = it.barcode
@@ -121,6 +135,7 @@ class GoodsService {
                     //将每一个供应商拥有的商品计算总量
                     value.suppliers.each{
                         it.numberRepo = it.qty
+                        it.iprc = inprc
                     }
 
                     //获取同一件商品的所有供应商的数量
@@ -132,6 +147,7 @@ class GoodsService {
             }else{
                 dbInstance.eachRow("select * from Goods where barcode = '"+barcode+"'",{
                     def value = [:]   //每一个value表示一个商品
+                    def inprc = it.inprc   //获取这个商品的价格
                     value.goodsName = it.fname  //商品名称
                     value.incode = it.incode
                     value.barcode = it.barcode
@@ -152,6 +168,7 @@ class GoodsService {
                     //将每一个供应商拥有的商品计算总量
                     value.suppliers.each{
                         it.numberRepo = it.qty
+                        it.iprc = inprc
                     }
 
                     //获取同一件商品的所有供应商的数量
@@ -261,10 +278,10 @@ class GoodsService {
         def qty_hj = 0   //合计所有的数量
         goods.each{
             //将每一个商品的四个价格全部算出来(进价 售价 无税进价 无税售价)
-            iamt_hj +=(it.iamt = it.total*it.inprc*(1+it.taxrate/100))  //捆 * 一捆多少个 * 一个的单价
-            ramt_hj +=(it.ramt = it.total*it.snprc*(1+it.taxrate/100))
-            wiamt_hj +=(it.wiamt = it.total*it.inprc)
-            wramt_hj +=(it.wramt = it.total*it.snprc)
+            iamt_hj +=(it.iamt = it.total*it.inprc)  //捆 * 一捆多少个 * 一个的单价
+            ramt_hj +=(it.ramt = it.total*it.snprc)
+            wiamt_hj +=(it.wiamt = (it.total*it.inprc)/(1+it.taxrate/100))
+            wramt_hj +=(it.wramt = (it.total*it.snprc)/(1+it.taxrate/100))
         }
 
         //总店和分店的不同就是在sppandian表里有一个qty_hj的字段，但是经过测试这里没有需要的文件
@@ -422,11 +439,14 @@ class GoodsService {
         def wramt_hj = 0
         def Qty_hj = 0
         goods.each{
+            //首先将商品的上次的价格保存起来
+            it.lastiprc = it.inprc;
             //将每一个商品的四个价格全部算出来(进价 售价 无税进价 无税售价)
-            iamt_hj +=(it.iamt = it.total*it.price*(1+it.taxrate/100))  //捆 * 一捆多少个 * 一个的单价  bug 需要加上零数
-            ramt_hj +=(it.ramt = it.total*it.snprc*(1+it.taxrate/100))
-            wiamt_hj +=(it.wiamt = it.total*it.price)
-            wramt_hj +=(it.wramt = it.total*it.snprc)
+//            iamt_hj +=(it.iamt = it.total*it.price*(1+it.taxrate/100))  //捆 * 一捆多少个 * 一个的单价  bug 需要加上零数
+            iamt_hj +=(it.iamt = it.total*it.price)  //捆 * 一捆多少个 * 一个的单价  bug 需要加上零数
+            ramt_hj +=(it.ramt = it.total*it.snprc)
+            wiamt_hj +=(it.wiamt = (it.total*it.price)/(1+it.taxrate/100))
+            wramt_hj +=(it.wramt = (it.total*it.snprc)/(1+it.taxrate/100))
             Qty_hj += it.total  //所有的商品的总重量
         }
 
@@ -444,8 +464,8 @@ class GoodsService {
 
             //将数据全部存入sptoxsitem表
             goods.each {
-                dbInstance.execute("insert into sptoxsitem (orderno, incode, barcode, fname, specs, unit, packunit, packnum, qty0, qty1, qty, lastiprc, iprc, rprc, iamt, ramt, wiamt, wramt, taxrate, jxtaxrate, giftqty, date1, date2, remark, addtime) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                        [orderNoString, it.incode, it.barcode, it.fname, it.specs, it.unit, it.packunit, it.packnum, it.amount, it.remainder, it.total,'0', it.price, it.snprc, it.iamt, it.ramt, it.wiamt, it.wramt, it.taxrate, it.jxtaxrate, '0', null, null, null, currentTimeStringDetail])
+                dbInstance.execute("insert into sptoxsitem (orderno, incode, barcode, fname, specs, unit, packunit, packnum, qty0, qty1, qty, Lastiprc, iprc, rprc, iamt, ramt, wiamt, wramt, taxrate, jxtaxrate, giftqty, date1, date2, remark, addtime) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        [orderNoString, it.incode, it.barcode, it.fname, it.specs, it.unit, it.packunit, it.packnum, it.amount, it.remainder, it.total, it.lastiprc, it.price, it.snprc, it.iamt, it.ramt, it.wiamt, it.wramt, it.taxrate, it.jxtaxrate, '0', null, null, null, currentTimeStringDetail])
             }
         } else if("总部" == sqlUtilService.department){
             //写入sptox表
@@ -454,8 +474,8 @@ class GoodsService {
 
             //将数据全部存入sptoxsitem表
             goods.each {
-                dbInstance.execute("insert into sptoxsitem (orderno, incode, barcode, fname, specs, unit, packunit, packnum, qty0, qty1, qty, lastiprc, iprc, rprc, iamt, ramt, wiamt, wramt, taxrate, jxtaxrate, giftqty, date1, date2, remark, addtime) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                        [orderNoString, it.incode, it.barcode, it.fname, it.specs, it.unit, it.packunit, it.packnum, it.amount, it.remainder, it.total,'0', it.price, it.snprc, it.iamt, it.ramt, it.wiamt, it.wramt, it.taxrate, it.jxtaxrate, '0', null, null, null, currentTimeStringDetail])
+                dbInstance.execute("insert into sptoxsitem (orderno, incode, barcode, fname, specs, unit, packunit, packnum, qty0, qty1, qty, Lastiprc, iprc, rprc, iamt, ramt, wiamt, wramt, taxrate, jxtaxrate, giftqty, date1, date2, remark, addtime) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        [orderNoString, it.incode, it.barcode, it.fname, it.specs, it.unit, it.packunit, it.packnum, it.amount, it.remainder, it.total, it.lastiprc, it.price, it.snprc, it.iamt, it.ramt, it.wiamt, it.wramt, it.taxrate, it.jxtaxrate, '0', null, null, null, currentTimeStringDetail])
             }
         }
 
